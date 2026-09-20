@@ -10,7 +10,7 @@ few pixels of window peeking in at the edge — on an ultrawide, easy to miss
 entirely. This replaces that sliver with something you can see without looking
 for it.
 
-![Two windows parked past the left edge of an ultrawide, the edge glowing with a ‹2 pill](preview.png)
+![Left and right screen edges, each glowing in the theme accent: the left edge carries a ‹2 pill, the right a 5›](preview.png)
 
 ## Install
 
