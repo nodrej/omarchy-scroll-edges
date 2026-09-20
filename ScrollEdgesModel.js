@@ -8,6 +8,23 @@
 // transform, but positions windows in the logical space it lays out in. The
 // odd transforms are the 90°/270° rotations, which swap the axes: the portrait
 // Dell is a 3840x2160 panel that windows see as 1728x3072.
+// Hyprland's coordinate pairs arrive as plain arrays from a JSON read and as
+// array-like values from Quickshell's own models, which are not Arrays but
+// index the same way. Both are normalised here, and anything that isn't a pair
+// of finite numbers is refused, so the geometry below can just do arithmetic.
+function numbers(value, length) {
+  if (!value || value.length !== length) return null
+
+  var out = []
+  for (var i = 0; i < length; i++) {
+    var number = Number(value[i])
+    if (!isFinite(number)) return null
+    out.push(number)
+  }
+
+  return out
+}
+
 function logicalBounds(monitor) {
   var scale = Number(monitor.scale) || 1
   var rotated = (Number(monitor.transform) || 0) % 2 === 1
@@ -42,11 +59,10 @@ function emptyCounts() {
 // indicators exist to replace.
 function scan(clients, monitor, peek) {
   var counts = emptyCounts()
-  if (!monitor || !Array.isArray(clients)) return counts
+  if (!monitor || !clients || !clients.length) return counts
 
-  if (Array.isArray(monitor.reserved) && monitor.reserved.length === 4) {
-    counts.reserved = monitor.reserved
-  }
+  var reserved = numbers(monitor.reserved, 4)
+  if (reserved) counts.reserved = reserved
 
   var workspaceId = monitor.activeWorkspace ? monitor.activeWorkspace.id : null
   if (workspaceId === null || workspaceId === undefined) return counts
@@ -69,12 +85,15 @@ function scan(clients, monitor, peek) {
     // Floating windows sit outside the scroll row entirely. One dragged half
     // off-screen says nothing about how many columns the row holds.
     if (client.floating) continue
-    if (!Array.isArray(client.at) || !Array.isArray(client.size)) continue
 
-    var x = client.at[0]
-    var y = client.at[1]
-    var right = x + client.size[0]
-    var bottom = y + client.size[1]
+    var at = numbers(client.at, 2)
+    var size = numbers(client.size, 2)
+    if (!at || !size) continue
+
+    var x = at[0]
+    var y = at[1]
+    var right = x + size[0]
+    var bottom = y + size[1]
 
     // Each axis is judged on its own, so a rotated monitor scrolling top to
     // bottom needs no special case here.
@@ -92,7 +111,7 @@ function scan(clients, monitor, peek) {
 // Monitor name -> counts, for every monitor Hyprland currently reports.
 function scanAll(clients, monitors, peek) {
   var byName = {}
-  if (!Array.isArray(monitors)) return byName
+  if (!monitors || !monitors.length) return byName
 
   for (var i = 0; i < monitors.length; i++) {
     var monitor = monitors[i]

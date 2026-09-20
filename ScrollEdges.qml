@@ -49,7 +49,7 @@ Item {
   // Hyprland's event socket drives the refreshes; the poll only covers a view
   // that settles into its final position without a further event to say so.
   // That can only follow an event, so the poll sleeps through an idle desktop
-  // rather than spawning hyprctl every few seconds all day.
+  // rather than re-reading the layout every few seconds all day.
   readonly property int safetyPollInterval: 2500
   readonly property int safetyPollWindow: 10000
 
@@ -58,42 +58,37 @@ Item {
   // Monitor name -> Model counts.
   property var edges: ({})
 
-  // A query started before the latest event may read the layout it replaced,
-  // so remember the request and re-run rather than dropping it.
-  property bool refreshPending: false
-
   function countsFor(name) {
     var counts = edges[name]
     return counts ? counts : Model.emptyCounts()
   }
 
+  // Quickshell already tracks Hyprland's windows and monitors from the event
+  // socket, but the geometry inside each object is only re-read on request.
+  // Asking for both lists is a socket round trip and no subprocess at all.
   function refresh() {
-    if (query.running) {
-      refreshPending = true
-      return
-    }
-
-    refreshPending = false
-    query.running = true
+    Hyprland.refreshToplevels()
+    Hyprland.refreshMonitors()
   }
 
-  Component.onCompleted: refresh()
+  // Counts and the bounds they are measured against are read from the models in
+  // one pass, so a half-arrived refresh can never mix a new window position with
+  // an old monitor size.
+  function recount() {
+    var clients = []
+    var toplevels = Hyprland.toplevels.values
+    for (var i = 0; i < toplevels.length; i++) clients.push(toplevels[i].lastIpcObject)
 
-  // Watched rather than read once, so an edit to shell.json lands without
-  // restarting the shell — the same way the rest of the shell treats it.
-  FileView {
-    id: shellConfig
+    var monitors = []
+    var screens = Hyprland.monitors.values
+    for (var j = 0; j < screens.length; j++) monitors.push(screens[j].lastIpcObject)
 
-    path: Quickshell.env("HOME") + "/.config/omarchy/shell.json"
-    preload: true
-    watchChanges: true
-    printErrors: false
+    root.edges = Model.scanAll(clients, monitors, root.peekThreshold)
+  }
 
-    // `text()` is stale inside the change signal, so both paths go through
-    // reload() -> onLoaded and always parse the file as it now stands.
-    onFileChanged: reload()
-    onLoaded: root.settings = Model.settingsFor(text(), root.pluginId)
-    onLoadFailed: root.settings = ({})
+  Component.onCompleted: {
+    refresh()
+    recount()
   }
 
   Connections {
@@ -126,47 +121,35 @@ Item {
     }
   }
 
-  // Clients and monitors in one read, so the counts and the bounds they are
-  // measured against always come from the same instant.
-  Process {
-    id: query
-    command: ["sh", "-c", "printf '['; hyprctl -j clients; printf ','; hyprctl -j monitors; printf ']'"]
+  // A refresh lands asynchronously, object by object, so the objects say when
+  // there is something new to count rather than the plugin guessing how long a
+  // round trip takes. The timer coalesces that burst into a single pass.
+  Timer {
+    id: recountDebounce
+    interval: 30
+    onTriggered: root.recount()
+  }
 
-    onRunningChanged: {
-      if (running) {
-        stall.restart()
-        return
-      }
+  Instantiator {
+    model: Hyprland.toplevels
 
-      stall.stop()
-      if (root.refreshPending) root.refresh()
-    }
+    delegate: Connections {
+      required property var modelData
 
-    stdout: StdioCollector {
-      waitForEnd: true
-
-      onStreamFinished: {
-        var payload
-        try {
-          payload = JSON.parse(text || "[]")
-        } catch (e) {
-          // A hyprctl that failed or was killed mid-write leaves the previous
-          // counts standing, which is better than blanking the indicators.
-          return
-        }
-
-        if (!Array.isArray(payload) || payload.length !== 2) return
-        root.edges = Model.scanAll(payload[0], payload[1], root.peekThreshold)
-      }
+      target: modelData
+      function onLastIpcObjectChanged() { recountDebounce.restart() }
     }
   }
 
-  // hyprctl normally answers in a few milliseconds; one that hasn't by now is
-  // wedged and would otherwise block every later refresh.
-  Timer {
-    id: stall
-    interval: 2000
-    onTriggered: if (query.running) query.signal(15)
+  Instantiator {
+    model: Hyprland.monitors
+
+    delegate: Connections {
+      required property var modelData
+
+      target: modelData
+      function onLastIpcObjectChanged() { recountDebounce.restart() }
+    }
   }
 
   Variants {

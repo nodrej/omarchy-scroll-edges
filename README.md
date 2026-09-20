@@ -81,13 +81,14 @@ else in your configuration is touched, and the plugin never writes to it.
 ## Requirements and dependencies
 
 - Omarchy 4 (Quattro), whose Quickshell-based `omarchy-shell` provides the
-  `qs.Commons` and `qs.Ui` modules this plugin draws with.
-- `hyprctl`, which ships with Hyprland. The plugin reads `hyprctl -j clients`
-  and `hyprctl -j monitors` and runs no other commands.
+  `qs.Commons` and `qs.Ui` modules this plugin draws with, and the
+  `Quickshell.Hyprland` models it reads the window layout from.
 
-There are no other dependencies: nothing is downloaded, installed, or built,
-no files outside this plugin folder are written, and no elevated privileges are
-requested at any point.
+That is the whole dependency list. The plugin starts no processes at all — not
+even `hyprctl` — downloads nothing, installs nothing, writes no files, opens no
+network connections, and requests no elevated privileges. The only file it
+reads is `~/.config/omarchy/shell.json`, for the settings above, and it never
+writes to it.
 
 It is built for the scrolling layout (`layout = "scrolling"` in
 `~/.config/hypr/looknfeel.lua`). On the default dwindle layout it is harmless —
@@ -95,14 +96,16 @@ nothing is ever parked past an edge, so nothing ever shows.
 
 ## How it works
 
-`ScrollEdges.qml` asks `hyprctl` for clients and monitors in a single read, so
-the counts and the bounds they are measured against come from the same instant.
-Hyprland's event socket drives the refreshes — almost anything can move a
-column across an edge, so every event schedules the same cheap debounced read
-rather than a list of interesting events that would quietly go stale. A short
-safety poll covers a view that settles into its final position without a
-further event to say so, and it only runs in the ten seconds after an event, so
-an idle desktop is genuinely idle.
+`ScrollEdges.qml` counts from Quickshell's own `Hyprland.toplevels` and
+`Hyprland.monitors` models, reading both in one pass so a window's new position
+is never measured against an old monitor size. Hyprland's event socket drives
+the refreshes — almost anything can move a column across an edge, so every
+event schedules the same cheap debounced re-read rather than a list of
+interesting events that would quietly go stale. The refreshed data lands object
+by object, and those objects say when there is something new to count, so no
+delay has to be guessed at. A short safety poll covers a view that settles into
+its final position without a further event to say so, and it only runs in the
+ten seconds after an event, so an idle desktop is genuinely idle.
 
 The window-counting rules live in `ScrollEdgesModel.js` as plain functions,
 away from the layer-shell plumbing, so they can be read and corrected on their
