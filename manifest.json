@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.nodrej.scroll-edges",
+  "name": "Scroll edges",
+  "version": "1.0.0",
+  "author": "nodrej",
+  "license": "MIT",
+  "repository": "https://github.com/nodrej/omarchy-scroll-edges",
+  "description": "Highlights a screen edge when the scrolling layout has windows parked past it, with a count of how many.",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "ScrollEdges.qml"
+  }
+}
