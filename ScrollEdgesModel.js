@@ -122,9 +122,9 @@ function scanAll(clients, monitors, peek) {
   return byName
 }
 
-// A colour override from shell.json, as "#rgb" or "#rrggbb". Anything else —
+// A color override from shell.json, as "#rgb" or "#rrggbb". Anything else —
 // including an alpha channel, which glowOpacity already owns — returns "" so
-// the theme's colour stays in charge rather than a typo painting the edge black.
+// the theme's color stays in charge rather than a typo painting the edge black.
 function colorSetting(value) {
   if (typeof value !== "string") return ""
   var trimmed = value.trim()

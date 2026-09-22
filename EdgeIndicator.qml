@@ -39,7 +39,7 @@ Item {
   //
   // The exponent is the whole character of the thing. Squared or steeper reads
   // as a hairline with a smudge after it — which is the sliver of window this
-  // replaces. Just above linear keeps enough colour out at half the band's
+  // replaces. Just above linear keeps enough color out at half the band's
   // width to register as a deliberate highlight in peripheral vision.
   function stopColor(position) {
     var distance = root.nearFirst ? position : 1 - position

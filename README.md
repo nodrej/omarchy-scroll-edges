@@ -2,7 +2,7 @@
 
 An [Omarchy](https://omarchy.org) shell plugin for the scrolling layout: when a
 workspace has windows parked past the side of the screen, the edge they went
-past lights up in your theme's accent colour and a small pill says how many.
+past lights up in your theme's accent color and a small pill says how many.
 
 The scrolling layout keeps a workspace's windows in one long row and shows the
 slice that fits. Whether anything is out there is normally only legible as a
@@ -39,7 +39,7 @@ Nothing to press. Scroll the row as usual and the indicators follow:
 - The indicators are click-through, sit under fullscreen windows, and stay
   inside the bar's reserved area, so the glow stops at the bar instead of
   tinting it.
-- Colours come from the active Omarchy theme's accent and change with it,
+- Colors come from the active Omarchy theme's accent and change with it,
   unless you pin your own (see below).
 
 ## Configure
@@ -68,12 +68,12 @@ save — no restart.
 | `peek` | `56` | How many pixels of a window may still be on screen before it counts as hidden. A window showing more than this is visible enough to speak for itself. |
 | `glowSize` | `44` | How far the glow reaches in from the edge, in pixels. Sized for an ultrawide; a laptop screen will want less. |
 | `glowOpacity` | `0.62` | How strong the glow is at the edge itself, from `0` to `1`. It fades to nothing across `glowSize`. |
-| `color` | theme accent | Colour of the glow and the count pill, as `"#rrggbb"` or `"#rgb"`. Leave it out to follow the theme. |
-| `labelColor` | theme background | Colour of the number on the pill. Worth setting alongside a light `color`, so the count stays readable. |
+| `color` | theme accent | Color of the glow and the count pill, as `"#rrggbb"` or `"#rgb"`. Leave it out to follow the theme. |
+| `labelColor` | theme background | Color of the number on the pill. Worth setting alongside a light `color`, so the count stays readable. |
 
 A value that is missing, negative, or not a number leaves the default standing;
-so does a colour that isn't a hex code. Opacity belongs to `glowOpacity`, so
-the colours take no alpha channel.
+so does a color that isn't a hex code. Opacity belongs to `glowOpacity`, so
+the colors take no alpha channel.
 
 ## Remove
 
