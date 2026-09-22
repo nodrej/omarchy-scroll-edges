@@ -17,6 +17,7 @@ Item {
   property int glowSize: 44
   property real glowAlpha: 0.62
   property color tint: Color.accent
+  property color labelColor: Color.background
 
   readonly property bool horizontal: edge === "left" || edge === "right"
   // Gradients run left-to-right and top-to-bottom, so on the near edges the
@@ -102,7 +103,7 @@ Item {
         return root.count + "⌄"
       }
 
-      color: Color.background
+      color: root.labelColor
       font.family: Style.font.family
       font.pixelSize: Style.font.subtitle
       font.bold: true

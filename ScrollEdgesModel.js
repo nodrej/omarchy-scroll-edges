@@ -122,6 +122,15 @@ function scanAll(clients, monitors, peek) {
   return byName
 }
 
+// A colour override from shell.json, as "#rgb" or "#rrggbb". Anything else —
+// including an alpha channel, which glowOpacity already owns — returns "" so
+// the theme's colour stays in charge rather than a typo painting the edge black.
+function colorSetting(value) {
+  if (typeof value !== "string") return ""
+  var trimmed = value.trim()
+  return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(trimmed) ? trimmed : ""
+}
+
 // This plugin's own entry in shell.json, which is where its tunables live.
 // A file that is missing, half-written, or simply doesn't mention the plugin
 // is not an error — it means "use the defaults", so every failure returns {}.

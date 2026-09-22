@@ -24,7 +24,8 @@ Item {
   // overridden per machine from the plugin's own entry in shell.json, since an
   // ultrawide and a 13" laptop don't want the same answers:
   //
-  //   { "id": "io.github.nodrej.scroll-edges", "peek": 56, "glowSize": 44, "glowOpacity": 0.62 }
+  //   { "id": "io.github.nodrej.scroll-edges", "peek": 56, "glowSize": 44, "glowOpacity": 0.62,
+  //     "color": "#7aa2f7", "labelColor": "#1a1b26" }
   //
   // Services aren't handed their shell.json entry the way bar widgets are, so
   // the file is read below. Anything missing or unreadable leaves the defaults.
@@ -45,6 +46,14 @@ Item {
   // window it replaces.
   readonly property int glowSize: setting("glowSize", 44)
   readonly property real glowAlpha: setting("glowOpacity", 0.62)
+
+  // The theme's accent and background by default, so the indicators follow a
+  // theme switch. A hex override pins them instead, for anyone whose accent
+  // is too quiet to notice at the edge — or too close to their wallpaper.
+  readonly property string colorOverride: Model.colorSetting(root.settings.color)
+  readonly property string labelColorOverride: Model.colorSetting(root.settings.labelColor)
+  readonly property color tint: colorOverride !== "" ? colorOverride : Color.accent
+  readonly property color labelColor: labelColorOverride !== "" ? labelColorOverride : Color.background
 
   // Hyprland's event socket drives the refreshes; the poll only covers a view
   // that settles into its final position without a further event to say so.
@@ -89,6 +98,23 @@ Item {
   Component.onCompleted: {
     refresh()
     recount()
+  }
+
+  // Watched rather than read once, so an edit to shell.json lands without
+  // restarting the shell — the same way the rest of the shell treats it.
+  FileView {
+    id: shellConfig
+
+    path: Quickshell.env("HOME") + "/.config/omarchy/shell.json"
+    preload: true
+    watchChanges: true
+    printErrors: false
+
+    // `text()` is stale inside the change signal, so both paths go through
+    // reload() -> onLoaded and always parse the file as it now stands.
+    onFileChanged: reload()
+    onLoaded: root.settings = Model.settingsFor(text(), root.pluginId)
+    onLoadFailed: root.settings = ({})
   }
 
   Connections {
@@ -232,6 +258,8 @@ Item {
             shown: panel.shown
             glowSize: root.glowSize
             glowAlpha: root.glowAlpha
+            tint: root.tint
+            labelColor: root.labelColor
           }
         }
       }

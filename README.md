@@ -39,7 +39,8 @@ Nothing to press. Scroll the row as usual and the indicators follow:
 - The indicators are click-through, sit under fullscreen windows, and stay
   inside the bar's reserved area, so the glow stops at the bar instead of
   tinting it.
-- Colours come from the active Omarchy theme's accent and change with it.
+- Colours come from the active Omarchy theme's accent and change with it,
+  unless you pin your own (see below).
 
 ## Configure
 
@@ -54,7 +55,9 @@ save — no restart.
       "id": "io.github.nodrej.scroll-edges",
       "peek": 56,
       "glowSize": 44,
-      "glowOpacity": 0.62
+      "glowOpacity": 0.62,
+      "color": "#ff9e64",
+      "labelColor": "#1a1b26"
     }
   ]
 }
@@ -65,8 +68,12 @@ save — no restart.
 | `peek` | `56` | How many pixels of a window may still be on screen before it counts as hidden. A window showing more than this is visible enough to speak for itself. |
 | `glowSize` | `44` | How far the glow reaches in from the edge, in pixels. Sized for an ultrawide; a laptop screen will want less. |
 | `glowOpacity` | `0.62` | How strong the glow is at the edge itself, from `0` to `1`. It fades to nothing across `glowSize`. |
+| `color` | theme accent | Colour of the glow and the count pill, as `"#rrggbb"` or `"#rgb"`. Leave it out to follow the theme. |
+| `labelColor` | theme background | Colour of the number on the pill. Worth setting alongside a light `color`, so the count stays readable. |
 
-A value that is missing, negative, or not a number leaves the default standing.
+A value that is missing, negative, or not a number leaves the default standing;
+so does a colour that isn't a hex code. Opacity belongs to `glowOpacity`, so
+the colours take no alpha channel.
 
 ## Remove
 
