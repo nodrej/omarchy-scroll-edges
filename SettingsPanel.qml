@@ -147,8 +147,9 @@ Item {
     stopPreview()
   }
 
-  // Read only. The shell API replaces the whole entry, so each save starts
-  // with the latest copy rather than dropping keys this version doesn't own.
+  // Read only, with the host's bar-layout-first lookup shared by the service.
+  // The shell API replaces the whole entry, so each save starts with the latest
+  // copy rather than dropping keys this version doesn't own.
   FileView {
     id: shellConfig
     path: Quickshell.env("HOME") + "/.config/omarchy/shell.json"
@@ -159,7 +160,7 @@ Item {
     onLoaded: {
       root.currentEntry = EdgesModel.settingsFor(text(), root.pluginId)
       root.entryRead = true
-      root.entryReady = root.currentEntry.id === root.pluginId
+      root.entryReady = EdgesModel.canonicalWidgetId(root.currentEntry.id) === root.pluginId
       if (root.opened && !root.initialized) root.initialize()
     }
     onLoadFailed: {

@@ -29,7 +29,8 @@ Item {
   //     "color": "#7aa2f7", "labelColor": "#1a1b26" }
   //
   // Services aren't handed their shell.json entry the way bar widgets are, so
-  // the file is read below. Anything missing or unreadable leaves the defaults.
+  // the file is read below, bar layout first and then plugins[], like the host.
+  // Anything missing or unreadable leaves the defaults.
   property var settings: ({})
 
   // Panel previews are temporary and never replace the saved settings or counts.

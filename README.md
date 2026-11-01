@@ -18,7 +18,8 @@ for it.
 omarchy plugin add https://github.com/nodrej/omarchy-scroll-edges.git --enable
 ```
 
-It runs as a service, so there is nothing to place in the bar.
+The indicators run as a service. An optional bar icon opens the settings window;
+new installations enabled with the command above place it in the right section.
 
 ## Usage
 
@@ -43,6 +44,38 @@ Nothing to press. Scroll the row as usual and the indicators follow:
   unless you pin your own (see below).
 
 ## Configure
+
+### Bar icon
+
+Left-click the arrows icon to toggle the settings window. It uses the bar's
+active color while the window is open, including when opened with a shortcut.
+Add it to the bar's right section (the top right with the default bar):
+
+```sh
+omarchy bar put io.github.nodrej.scroll-edges
+```
+
+To choose a spot when first adding it, for example before the tray:
+
+```sh
+omarchy bar put io.github.nodrej.scroll-edges --section right --before omarchy.tray
+```
+
+`put` leaves an icon already on the bar in place. To reposition it, use
+`omarchy bar move io.github.nodrej.scroll-edges --section right --before omarchy.tray`.
+
+**Upgrading from a service-only installation:** the current host's `put` command
+does not move an existing entry from `plugins[]` into the bar, and does not create
+a second entry. Back up `~/.config/omarchy/shell.json`, then move this plugin's
+whole entry from `plugins[]` into a `bar.layout` section, such as
+`bar.layout.right[]`. Keep all its keys; your settings move with that entry.
+The shell picks up the change without a restart. This is also how to keep
+existing settings when adding the icon after an upgrade.
+
+To remove just the icon and keep the indicators and settings window, move the
+whole entry back from `bar.layout.<section>[]` into `plugins[]`, preserving its
+keys. Restore your backup to undo a manual move. `omarchy plugin disable
+io.github.nodrej.scroll-edges` disables the indicators as well as the icon.
 
 ### Settings window
 
@@ -69,7 +102,11 @@ sample counts on every monitor until you close the window, including with Esc.
 
 Every tunable has a default that works; override the ones you want from this
 plugin's entry in `~/.config/omarchy/shell.json`. Changes apply as soon as you
-save — no restart.
+save. No restart is needed. With the icon placed, the entry lives in
+`bar.layout.left[]`, `bar.layout.center[]`, or `bar.layout.right[]`; otherwise
+it can live in `plugins[]`, as below. If both exist, the bar entry wins, in
+left, center, right order, matching the host. The entries are not merged;
+keep just one entry to avoid stale settings.
 
 ```json
 {
@@ -104,9 +141,11 @@ the colors take no alpha channel.
 omarchy plugin remove io.github.nodrej.scroll-edges
 ```
 
-Removing the plugin takes its indicators with it. If you added any of the keys
-above to `~/.config/omarchy/shell.json`, delete that plugin entry too; nothing
-else in your configuration is touched.
+Removing the plugin takes its indicators, settings window, and bar icon with it.
+The host removes its active configuration entry when disabling it for removal.
+If you manually created duplicate entries, remove any remaining entries with
+this id from both `plugins[]` and `bar.layout.<section>[]` in
+`~/.config/omarchy/shell.json`.
 
 ## Requirements and dependencies
 
