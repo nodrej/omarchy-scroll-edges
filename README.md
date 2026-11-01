@@ -44,6 +44,29 @@ Nothing to press. Scroll the row as usual and the indicators follow:
 
 ## Configure
 
+### Settings window
+
+Open the settings window with:
+
+```sh
+omarchy-shell shell summon io.github.nodrej.scroll-edges
+```
+
+Use `omarchy-shell shell toggle io.github.nodrej.scroll-edges` to toggle it.
+For a keyboard shortcut, add an unused binding to `~/.config/hypr/bindings.lua`:
+
+```lua
+o.bind("SUPER + CTRL + G", "Scroll edges settings", "omarchy-shell shell toggle io.github.nodrej.scroll-edges")
+```
+
+Changes save automatically and apply live. Choose theme colors or enter a
+`#rrggbb` or `#rgb` color, adjust the sliders, and check the preview. Invalid
+hex input is marked and never saved. "Show on my screens while open" shows
+sample counts on every monitor until you close the window, including with Esc.
+"Reset to defaults" removes the five overrides and follows the theme again.
+
+### Manual settings
+
 Every tunable has a default that works; override the ones you want from this
 plugin's entry in `~/.config/omarchy/shell.json`. Changes apply as soon as you
 save — no restart.
@@ -83,7 +106,7 @@ omarchy plugin remove io.github.nodrej.scroll-edges
 
 Removing the plugin takes its indicators with it. If you added any of the keys
 above to `~/.config/omarchy/shell.json`, delete that plugin entry too; nothing
-else in your configuration is touched, and the plugin never writes to it.
+else in your configuration is touched.
 
 ## Requirements and dependencies
 
@@ -91,11 +114,12 @@ else in your configuration is touched, and the plugin never writes to it.
   `qs.Commons` and `qs.Ui` modules this plugin draws with, and the
   `Quickshell.Hyprland` models it reads the window layout from.
 
-That is the whole dependency list. The plugin starts no processes at all — not
-even `hyprctl` — downloads nothing, installs nothing, writes no files, opens no
-network connections, and requests no elevated privileges. The only file it
-reads is `~/.config/omarchy/shell.json`, for the settings above, and it never
-writes to it.
+That is the whole dependency list. The plugin starts no processes, including
+`hyprctl`, downloads nothing, installs nothing, opens no network connections,
+and requests no elevated privileges. The only file it reads directly is
+`~/.config/omarchy/shell.json`, for the settings above. It never writes files
+itself. The settings window saves this plugin's own entry through the shell's
+settings API, preserving other keys in that entry.
 
 It is built for the scrolling layout (`layout = "scrolling"` in
 `~/.config/hypr/looknfeel.lua`). On the default dwindle layout it is harmless —

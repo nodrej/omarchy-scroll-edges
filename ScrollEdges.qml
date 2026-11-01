@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "ScrollEdgesModel.js" as Model
 
@@ -31,8 +32,13 @@ Item {
   // the file is read below. Anything missing or unreadable leaves the defaults.
   property var settings: ({})
 
-  function setting(key, fallback) {
-    var value = Number(root.settings[key])
+  // Panel previews are temporary and never replace the saved settings or counts.
+  property bool previewing: false
+  property var previewSettings: ({})
+  readonly property var displaySettings: previewing ? previewSettings : settings
+
+  function setting(key, fallback, source) {
+    var value = Number((source || root.settings)[key])
     return (isFinite(value) && value >= 0) ? value : fallback
   }
 
@@ -44,16 +50,16 @@ Item {
   // Sized against the complaint this exists to answer: on a 3440px-wide
   // monitor a hairline at the edge is no easier to notice than the sliver of
   // window it replaces.
-  readonly property int glowSize: setting("glowSize", 44)
-  readonly property real glowAlpha: setting("glowOpacity", 0.62)
+  readonly property int glowSize: setting("glowSize", 44, displaySettings)
+  readonly property real glowAlpha: setting("glowOpacity", 0.62, displaySettings)
 
   // The theme's accent and background by default, so the indicators follow a
   // theme switch. A hex override pins them instead, for anyone whose accent
   // is too quiet to notice at the edge — or too close to their wallpaper.
-  readonly property string colorOverride: Model.colorSetting(root.settings.color)
-  readonly property string labelColorOverride: Model.colorSetting(root.settings.labelColor)
-  readonly property color tint: colorOverride !== "" ? colorOverride : Color.accent
-  readonly property color labelColor: labelColorOverride !== "" ? labelColorOverride : Color.background
+  readonly property string colorOverride: Model.colorSetting(root.displaySettings.color)
+  readonly property string labelColorOverride: Model.colorSetting(root.displaySettings.labelColor)
+  readonly property color tint: colorOverride !== "" ? colorOverride : Commons.Color.accent
+  readonly property color labelColor: labelColorOverride !== "" ? labelColorOverride : Commons.Color.background
 
   // Hyprland's event socket drives the refreshes; the poll only covers a view
   // that settles into its final position without a further event to say so.
@@ -187,7 +193,7 @@ Item {
       required property var modelData
 
       readonly property var counts: root.countsFor(modelData.name)
-      readonly property bool shown: counts.total > 0 && !counts.fullscreen
+      readonly property bool shown: root.previewing || (counts.total > 0 && !counts.fullscreen)
 
       function reservedAt(side) {
         var reserved = counts.reserved
@@ -254,7 +260,7 @@ Item {
             required property string modelData
 
             edge: modelData
-            count: panel.counts[modelData]
+            count: root.previewing ? (modelData === "left" ? 2 : modelData === "right" ? 5 : 0) : panel.counts[modelData]
             shown: panel.shown
             glowSize: root.glowSize
             glowAlpha: root.glowAlpha
