@@ -67,18 +67,19 @@ omarchy bar put io.github.nodrej.scroll-edges --section right --before omarchy.t
 **Upgrading from an earlier version:** `put` does nothing while this plugin's
 entry is still in `plugins[]`, which is where versions before 1.3.0 kept it.
 This moves that entry, with all its settings, to the end of the bar's right
-section. It only touches `shell.json` once the new version is ready, keeps a backup, and
-is safe to run twice:
+section. It only touches `shell.json` once the new version is ready and keeps a backup.
+Once the entry has moved, running it again changes nothing, backup included:
 
 ```sh
 cfg=~/.config/omarchy/shell.json
-jq --arg id io.github.nodrej.scroll-edges '
-  ([.plugins[]? | select(.id == $id)] | first) as $entry
-  | if $entry == null then . else
-      .plugins |= map(select(.id != $id))
-      | .bar.layout.right = ((.bar.layout.right // []) + [$entry])
-    end' "$cfg" > "$cfg.new" &&
-  cp "$cfg" "$cfg.bak" && cat "$cfg.new" > "$cfg" && rm "$cfg.new"
+id=io.github.nodrej.scroll-edges
+if jq -e --arg id "$id" 'any(.plugins[]?; .id == $id)' "$cfg" >/dev/null; then
+  jq --arg id "$id" '
+    ([.plugins[] | select(.id == $id)] | first) as $entry
+    | .plugins |= map(select(.id != $id))
+    | .bar.layout.right = ((.bar.layout.right // []) + [$entry])' "$cfg" > "$cfg.new" &&
+    cp "$cfg" "$cfg.bak" && cat "$cfg.new" > "$cfg" && rm "$cfg.new"
+fi
 ```
 
 The shell picks it up without a restart. Then use `omarchy bar move` (above)
