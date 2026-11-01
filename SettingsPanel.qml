@@ -24,6 +24,7 @@ Item {
   property var currentEntry: ({})
   property var draft: Model.defaults()
   property bool dirty: false
+  property bool userEdited: false
   property string saveError: ""
   property bool previewOnScreens: false
   property var previewService: null
@@ -32,11 +33,12 @@ Item {
     && typeof shell.updateEntryInline === "function"
   readonly property color previewTint: glowEditor.previewColor
   readonly property color previewLabel: labelEditor.previewColor
-  readonly property var palette: [Commons.Color.accent, Commons.Color.foreground, Commons.Color.background, Commons.Color.urgent, Commons.Color.muted]
+  readonly property var themeSwatches: [Commons.Color.accent, Commons.Color.foreground, Commons.Color.background, Commons.Color.urgent, Commons.Color.muted]
 
   function initialize() {
     draft = Model.values(currentEntry)
     dirty = false
+    userEdited = false
     initialized = true
   }
 
@@ -44,6 +46,7 @@ Item {
     // A second summon should keep any edits already in progress.
     if (!opened) {
       initialized = false
+      userEdited = false
       if (entryRead) initialize()
       previewOnScreens = false
       saveError = ""
@@ -76,6 +79,8 @@ Item {
   }
 
   function setValue(key, value, immediate) {
+    if (!opened || !initialized || draft[key] === value) return
+    userEdited = true
     var next = Model.copy(draft)
     next[key] = value
     draft = next
@@ -86,7 +91,7 @@ Item {
 
   function saveNow() {
     saveDelay.stop()
-    if (!dirty || !canSave) return
+    if (!userEdited || !dirty || !canSave) return
     try {
       var next = Model.build(currentEntry, draft)
       shell.updateEntryInline(pluginId, next)
@@ -100,6 +105,8 @@ Item {
   }
 
   function resetDefaults() {
+    if (!opened || !initialized) return
+    userEdited = true
     saveDelay.stop()
     draft = Model.defaults()
     dirty = false
@@ -183,6 +190,7 @@ Item {
     property string followLabel: ""
     property string defaultLabel: ""
     property string value: ""
+    property bool fieldEdited: false
     property color themeColor: Commons.Color.accent
     readonly property bool following: value === ""
     readonly property string validHex: Model.hex(hexField.text)
@@ -193,11 +201,17 @@ Item {
 
     // Swatches deliberately replace the editor text. Keep later resets and
     // theme changes in step even after that explicit assignment.
-    onValueChanged: if (hexField) hexField.text = value || String(themeColor)
+    onValueChanged: {
+      fieldEdited = false
+      if (hexField) hexField.text = value || String(themeColor)
+    }
     onThemeColorChanged: if (hexField && following) hexField.text = String(themeColor)
 
     function commitField() {
-      if (!following && validHex !== "" && validHex !== value) committed(validHex)
+      // Loading or normalizing a saved color is never a reason to write it.
+      if (!fieldEdited || following || validHex === "") return
+      fieldEdited = false
+      if (validHex !== value) committed(validHex)
     }
 
     PanelSectionHeader { text: editor.title }
@@ -219,6 +233,7 @@ Item {
         placeholderText: "#rrggbb or #rgb"
         foreground: editor.validHex !== "" ? Commons.Color.foreground : Commons.Color.urgent
         selectByMouse: true
+        onTextEdited: editor.fieldEdited = true
         onEditingFinished: editor.commitField()
         onAccepted: editor.commitField()
       }
@@ -241,7 +256,7 @@ Item {
       visible: !editor.following
       spacing: Style.space(8)
       Repeater {
-        model: root.palette
+        model: root.themeSwatches
         Button {
           required property var modelData
           text: "●"
@@ -290,8 +305,26 @@ Item {
       fillColor: Commons.Color.accent
       knobColor: activeFocus ? Commons.Color.foreground : Commons.Color.accent
       activeFocusOnTab: true
-      onMoved: function(value) { editor.moved(value) }
+      // Only a held press may change the value through the slider signal.
+      // Keyboard changes below are explicit; incidental wheel events are not.
+      onMoved: function(value) { if (dragging) editor.moved(value) }
       onReleased: editor.released()
+
+      // Rejecting a wheel event lets it fall through to the slider beneath.
+      // Consume it and scroll the form instead; presses and drags pass through.
+      MouseArea {
+        anchors.fill: parent
+        z: 1
+        acceptedButtons: Qt.NoButton
+        hoverEnabled: false
+        onWheel: function(wheel) {
+          wheel.accepted = true
+          scroll.cancelFlick()
+          var delta = wheel.pixelDelta.y !== 0 ? wheel.pixelDelta.y
+            : wheel.angleDelta.y / 120 * Style.space(48)
+          scroll.contentY = Math.max(0, Math.min(Math.max(0, scroll.contentHeight - scroll.height), scroll.contentY - delta))
+        }
+      }
       Keys.onLeftPressed: {
         editor.moved(Math.max(minimum, value - step))
         editor.released()

@@ -47,6 +47,9 @@ Item {
   // this is visible enough to announce itself.
   readonly property int peekThreshold: setting("peek", 56)
 
+  // A settings edit changes the counts even when no window has moved.
+  onPeekThresholdChanged: recountDebounce.restart()
+
   // Sized against the complaint this exists to answer: on a 3440px-wide
   // monitor a hairline at the edge is no easier to notice than the sliver of
   // window it replaces.
