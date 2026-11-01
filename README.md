@@ -67,20 +67,22 @@ omarchy bar put io.github.nodrej.scroll-edges --section right --before omarchy.t
 **Upgrading from an earlier version:** `put` does nothing while this plugin's
 entry is still in `plugins[]`, which is where versions before 1.3.0 kept it.
 This moves that entry, with all its settings, to the end of the bar's right
-section. It backs up `shell.json` first and is safe to run twice:
+section. It only touches `shell.json` once the new version is ready, keeps a backup, and
+is safe to run twice:
 
 ```sh
 cfg=~/.config/omarchy/shell.json
-cp "$cfg" "$cfg.bak" && jq --arg id io.github.nodrej.scroll-edges '
+jq --arg id io.github.nodrej.scroll-edges '
   ([.plugins[]? | select(.id == $id)] | first) as $entry
   | if $entry == null then . else
       .plugins |= map(select(.id != $id))
       | .bar.layout.right = ((.bar.layout.right // []) + [$entry])
-    end' "$cfg.bak" > "$cfg"
+    end' "$cfg" > "$cfg.new" &&
+  cp "$cfg" "$cfg.bak" && cat "$cfg.new" > "$cfg" && rm "$cfg.new"
 ```
 
 The shell picks it up without a restart. Then use `omarchy bar move` (above)
-to put the icon where you want it. To undo, `mv "$cfg.bak" "$cfg"`.
+to put the icon where you want it. To undo, `cp "$cfg.bak" "$cfg"`.
 
 To remove just the icon and keep the indicators and settings window, move the
 whole entry back from `bar.layout.<section>[]` into `plugins[]`, preserving its
